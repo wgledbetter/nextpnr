@@ -76,31 +76,31 @@ struct DelayInfo
 struct BelId
 {
     BelId() = default;
-    BelId(CycloneV::pos_t _pos, uint16_t _z) : pos{_pos}, z{_z} {}
+    BelId(CycloneV::xycoords _pos, uint16_t _z) : pos{_pos}, z{_z} {}
 
     // pos_t is used for X/Y, nextpnr-cyclonev uses its own Z coordinate system.
-    CycloneV::pos_t pos = 0;
+    CycloneV::xycoords pos;
     uint16_t z = 0;
 
     bool operator==(const BelId &other) const { return pos == other.pos && z == other.z; }
     bool operator!=(const BelId &other) const { return pos != other.pos || z != other.z; }
     bool operator<(const BelId &other) const { return pos < other.pos || (pos == other.pos && z < other.z); }
-    unsigned int hash() const { return mkhash(pos, z); }
+    unsigned int hash() const { return mkhash(pos.v, z); }
 };
 
-static constexpr auto invalid_rnode = std::numeric_limits<CycloneV::rnode_t>::max();
+static constexpr auto invalid_rnode = std::numeric_limits<CycloneV::rnode_coords>::max();
 
 struct WireId
 {
     WireId() = default;
-    explicit WireId(CycloneV::rnode_t node) : node(node) {};
-    CycloneV::rnode_t node = invalid_rnode;
+    explicit WireId(CycloneV::rnode_coords node) : node(node) {};
+    CycloneV::rnode_coords node = invalid_rnode;
 
     // Wires created by nextpnr have rnode type >= 128
     bool is_nextpnr_created() const
     {
         NPNR_ASSERT(node != invalid_rnode);
-        return unsigned(CycloneV::rn2t(node)) >= 128;
+        return unsigned(node.t()) >= 128;
     }
 
     bool operator==(const WireId &other) const { return node == other.node; }
@@ -112,13 +112,13 @@ struct WireId
 struct PipId
 {
     PipId() = default;
-    PipId(CycloneV::rnode_t src, CycloneV::rnode_t dst) : src(src), dst(dst) {};
-    CycloneV::rnode_t src = invalid_rnode, dst = invalid_rnode;
+    PipId(CycloneV::rnode_coords src, CycloneV::rnode_coords dst) : src(src), dst(dst) {};
+    CycloneV::rnode_coords src = invalid_rnode, dst = invalid_rnode;
 
     bool operator==(const PipId &other) const { return src == other.src && dst == other.dst; }
     bool operator!=(const PipId &other) const { return src != other.src || dst != other.dst; }
     bool operator<(const PipId &other) const { return dst < other.dst || (dst == other.dst && src < other.src); }
-    unsigned int hash() const { return mkhash(src, dst); }
+    unsigned int hash() const { return mkhash(src.v, dst.v); }
 };
 
 typedef IdString DecalId;

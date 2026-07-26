@@ -251,7 +251,7 @@ DelayQuad Arch::getPipDelay(PipId pip) const
         return DelayQuad{20};
 
     // This is guesswork based on average of (interconnect delay / number of pips)
-    auto src_type = CycloneV::rn2t(src.node);
+    auto src_type = src.node.t();
 
     switch (src_type) {
     case CycloneV::rnode_type_t::SCLK:
@@ -303,7 +303,7 @@ bool Arch::getArcDelayOverride(const NetInfo *net_info, const PortRef &sink, Del
     mistral::AnalogSim::wave input_wave[2], output_wave[2];
     mistral::AnalogSim::time_interval output_delays[2];
     mistral::AnalogSim::time_interval output_delay_sum[2];
-    std::vector<std::pair<mistral::CycloneV::rnode_t, int>> outputs;
+    std::vector<std::pair<mistral::CycloneV::rnode_coords, int>> outputs;
     auto temp = mistral::CycloneV::T_100;
     auto est = mistral::CycloneV::EST_SLOW;
 
@@ -342,7 +342,7 @@ bool Arch::getArcDelayOverride(const NetInfo *net_info, const PortRef &sink, Del
             continue;
 
         if (dst.is_nextpnr_created())
-            dst.node = 0;
+            dst.node = CycloneV::rnode_coords(0);
 
         auto mode = cyclonev->rnode_timing_get_mode(src.node);
         NPNR_ASSERT(mode != mistral::CycloneV::RTM_UNSUPPORTED);
@@ -378,13 +378,13 @@ bool Arch::getArcDelayOverride(const NetInfo *net_info, const PortRef &sink, Del
                                           : mistral::CycloneV::RF_RISE;
             mistral::AnalogSim sim;
             int input = -1;
-            std::vector<std::pair<mistral::CycloneV::rnode_t, int>> outputs;
-            cyclonev->rnode_timing_build_circuit(src.node, temp, CycloneV::DELAY_MAX, actual_edge, sim, input, outputs);
+            std::vector<std::pair<mistral::CycloneV::rnode_index, int>> outputs;
+            cyclonev->rnode_timing_build_circuit(cyclonev->rc2ri(src.node), temp, CycloneV::DELAY_MAX, actual_edge, sim, input, outputs);
 
             sim.set_input_wave(input, input_wave[edge]);
             auto o = std::find_if(
                     outputs.begin(), outputs.end(),
-                    [&](std::pair<mistral::CycloneV::rnode_t, int> output) { return output.first == dst.node; });
+                    [&](std::pair<mistral::CycloneV::rnode_index, int> output) { return output.first == cyclonev->rc2ri(dst.node); });
             NPNR_ASSERT(o != outputs.end());
 
             output_wave[edge].clear();
@@ -419,10 +419,10 @@ delay_t Arch::predictDelay(BelId src_bel, IdString src_pin, BelId dst_bel, IdStr
 
 delay_t Arch::estimateDelay(WireId src, WireId dst) const
 {
-    int x0 = CycloneV::rn2x(src.node);
-    int y0 = CycloneV::rn2y(src.node);
-    int x1 = CycloneV::rn2x(dst.node);
-    int y1 = CycloneV::rn2y(dst.node);
+    int x0 = src.node.x();
+    int y0 = src.node.y();
+    int x1 = dst.node.x();
+    int y1 = dst.node.y();
     int x_diff = std::abs(x1 - x0);
     int y_diff = std::abs(y1 - y0);
     return 75 * x_diff + 200 * y_diff;
