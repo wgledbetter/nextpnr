@@ -102,26 +102,33 @@ Arch::Arch(ArchArgs args)
     log_info("Initialising bels...\n");
     bels_by_tile.resize(cyclonev->get_tile_sx() * cyclonev->get_tile_sy());
 
+    log_info("Creating LABs...\n");
     for (auto lab_pos : cyclonev->lab_get_pos())
         create_lab(lab_pos.x(), lab_pos.y(), /*is_mlab=*/false);
 
+    log_info("Creating MLABs...\n");
     for (auto mlab_pos : cyclonev->mlab_get_pos())
         create_lab(mlab_pos.x(), mlab_pos.y(), /*is_mlab=*/true);
 
+    log_info("Creating GPIOs...\n");
     for (auto gpio_pos : cyclonev->gpio_get_pos())
         create_gpio(gpio_pos.x(), gpio_pos.y());
 
+    log_info("Creating CLKBUFs...\n");
     for (auto cmuxh_pos : cyclonev->cmuxh_get_pos())
         create_clkbuf(cmuxh_pos.x(), cmuxh_pos.y());
 
+    log_info("Creating Control...\n");
     create_control(cyclonev->ctrl_get_pos()[0].x(), cyclonev->ctrl_get_pos()[0].y());
 
+    log_info("Creating HPS MPU...\n");
     auto hps_pos = cyclonev->hps_get_pos();
     if (!hps_pos.empty()) {
         create_hps_mpu_general_purpose(hps_pos[CycloneV::I_HPS_MPU_GENERAL_PURPOSE].x(),
                                        hps_pos[CycloneV::I_HPS_MPU_GENERAL_PURPOSE].y());
     }
 
+    log_info("Creating M10Ks...\n");
     for (auto m10k_pos : cyclonev->m10k_get_pos())
         create_m10k(m10k_pos.x(), m10k_pos.y());
 
